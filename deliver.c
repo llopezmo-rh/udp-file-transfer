@@ -16,6 +16,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <time.h>
 #include "utils.h"
 
 int main (int argc, char **argv) {
@@ -71,6 +72,8 @@ int main (int argc, char **argv) {
         Packet currentPacket;
         currentPacket.total_frag = total_frag;
         strncpy (currentPacket.filename, inputFileName, strlen(inputFileName) + 1);
+        
+        clock_t start_time = clock();
 
         while (current_frag_no <= total_frag) {
             currentPacket.frag_no = current_frag_no;
@@ -96,8 +99,8 @@ int main (int argc, char **argv) {
 
             char buf[BUFLEN];
             int ackReceived = 0;
-            Packet ackPacket;
-
+            Packet ackPacket;    
+       
             do {
                 //Transmit the packet that was just created
                 int bytesSent = sendto(socketFD, byteArrayPacket, currentPacketTotalSize, 0, server_info->ai_addr, sizeof(struct sockaddr_storage));
@@ -115,10 +118,14 @@ int main (int argc, char **argv) {
                     current_frag_no = ackPacket.frag_no;
                 }
 
-            } while(ackReceived == 0 && current_frag_no <= total_frag);
+            } while(ackReceived == 0 && current_frag_no <= total_frag);   
 
             free(byteArrayPacket);
         }
+        
+        clock_t end_time = clock();
+        double transfer_time = (double) (end_time - start_time) / CLOCKS_PER_SEC;
+        printf("Transfer time: %.2f seconds\n", transfer_time);
 
         //Free the server_info and my_info linked lists from getaddrinfo calls
         freeaddrinfo(server_info);
